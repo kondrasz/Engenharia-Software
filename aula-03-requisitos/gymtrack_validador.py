@@ -3,14 +3,13 @@ import time
 print("🏋️ GymTrack — Validador de Treino")
 print("=" * 40)
 
-# --- DADOS DO TREINO (mude os valores para testar!) ---
+# --- DADOS DO TREINO  ---
 exercicio = "Supino Reto"
 peso_kg = 80
 repeticoes = 10
 
 # -------------------------------------------------------
 # RF01 — O sistema deve validar o nome do exercício
-# (não pode ser vazio)
 # -------------------------------------------------------
 if exercicio != "":
     print(f"✅ [RF01] Exercício válido: {exercicio}")
