@@ -1,65 +1,109 @@
-# ==========================================
-# PARTE 2 — Validador de Requisitos
-# ==========================================
+from dataclasses import dataclass, field
+from typing import List
+from enum import Enum
 
 
+class Prioridade(Enum):
+    ALTA = "Alta"
+    MEDIA = "Média"
+    BAIXA = "Baixa"
+
+
+@dataclass
 class RequisitoFuncional:
-    def __init__(self, id, nome, descricao, pre_condicao=""):
-        self.id = id
-        self.nome = nome
-        self.descricao = descricao
-        self.pre_condicao = pre_condicao
+    id: str
+    nome: str
+    descricao: str
+    prioridade: Prioridade
+    ator: str
+    pre_condicao: str
+    pos_condicao: str
 
 
+@dataclass
+class RequisitoNaoFuncional:
+    id: str
+    categoria: str
+    descricao: str
+    criterio_aceitacao: str
+
+
+@dataclass
+class SRS:
+    projeto: str
+    versao: str
+    descricao: str
+    requisitos_funcionais: List[RequisitoFuncional] = field(default_factory=list)
+    requisitos_nao_funcionais: List[RequisitoNaoFuncional] = field(default_factory=list)
+
+    def adicionar_rf(self, req: RequisitoFuncional):
+        self.requisitos_funcionais.append(req)
+
+    def adicionar_rnf(self, req: RequisitoNaoFuncional):
+        self.requisitos_nao_funcionais.append(req)
+
+
+# --- PARTE 2: Validação Crítica ---
 def validar_requisito(rf: RequisitoFuncional) -> dict:
-    """
-    Valida se um requisito funcional segue as boas práticas.
-    """
-    resultados = {
-        "tamanho_maior_20_chars": len(rf.descricao) > 20,
-        "tem_pre_condicao": rf.pre_condicao.strip() != "",
-        "tem_criterio_mensuravel": any(char.isdigit() for char in rf.descricao),
+    return {
+        "ID": rf.id,
+        "Descrição Longa (>20)": len(rf.descricao) > 20,
+        "Tem Pré-condição": rf.pre_condicao.strip() != "",
+        "Mensurável (Contém Números)": any(char.isdigit() for char in rf.descricao),
     }
-    return resultados
 
 
-# Testando a validação com o RF-001
-rf1 = RequisitoFuncional(
-    id="RF-001",
-    nome="Cadastro de Produto",
-    descricao="O aluno vendedor deve poder cadastrar até 10 produtos com título, preço e 1 foto.",
-    pre_condicao="Estar logado com e-mail @fiap.com.br",
-)
-
-print(f"Validando {rf1.id}:")
-validacao = validar_requisito(rf1)
-for regra, passou in validacao.items():
-    print(f"[{'x' if passou else ' '}] {regra}")
-
-
-# ==========================================
-# PARTE 3 — Desafio Extra (Gerador Markdown)
-# ==========================================
-
-
-def exportar_markdown(rfs, rnfs):
-    """Gera o texto em Markdown pronto pro Notion/Confluence"""
-    md = "# SRS - FIAP Marketplace\n\n## Requisitos Funcionais\n"
-    for rf in rfs:
-        md += f"- **{rf.id}**: {rf.descricao}\n"
-
-    md += "\n## Requisitos Não-Funcionais\n"
-    for rnf in rnfs:
-        md += f"- **{rnf['id']}**: {rnf['descricao']}\n"
+# --- PARTE 3: Exportar Markdown ---
+def exportar_markdown(srs: SRS):
+    md = f"# SRS - {srs.projeto}\n\n"
+    md += f"**Versão:** {srs.versao}\n\n{srs.descricao}\n\n"
+    md += "## 🔧 Requisitos Funcionais\n"
+    for rf in srs.requisitos_funcionais:
+        md += f"### {rf.id}: {rf.nome}\n- **Ator:** {rf.ator}\n- **Descrição:** {rf.descricao}\n\n"
+    md += "## ⚡ Requisitos Não-Funcionais\n"
+    for rnf in srs.requisitos_nao_funcionais:
+        md += f"### {rnf.id}: {rnf.categoria}\n- **Criterio:** {rnf.criterio_aceitacao}\n\n"
     return md
 
 
-# Testando o export do desafio 3
-lista_rfs = [rf1]
-lista_rnfs = [
-    {"id": "RNF-001", "descricao": "O marketplace deve garantir 99.9% de uptime."}
-]
+# --- EXECUÇÃO: FIAP Marketplace ---
+marketplace = SRS(
+    "FIAP Marketplace", "1.0", "Plataforma de compra e venda entre alunos."
+)
 
-print("\n" + "=" * 40)
-print("Output do Gerador Markdown:\n")
-print(exportar_markdown(lista_rfs, lista_rnfs))
+# Adicionando RFs
+marketplace.adicionar_rf(
+    RequisitoFuncional(
+        "RF-001",
+        "Cadastro de Produto",
+        "Permitir que o aluno cadastre produtos com foto e preço.",
+        Prioridade.ALTA,
+        "Aluno Vendedor",
+        "Estar logado",
+        "Produto visível no feed",
+    )
+)
+marketplace.adicionar_rf(
+    RequisitoFuncional(
+        "RF-002",
+        "Busca por Categoria",
+        "O sistema deve filtrar produtos por 5 categorias diferentes.",
+        Prioridade.MEDIA,
+        "Aluno Comprador",
+        "Nenhuma",
+        "Lista filtrada exibida",
+    )
+)
+
+# Adicionando RNFs
+marketplace.adicionar_rnf(
+    RequisitoNaoFuncional("RNF-001", "Segurança", "Dados criptografados.", "Uso de SSL")
+)
+
+# Validando e Exibindo
+print("--- VALIDAÇÃO DE REQUISITOS ---")
+for rf in marketplace.requisitos_funcionais:
+    print(validar_requisito(rf))
+
+print("\n--- FORMATO MARKDOWN (CONFLUENCE) ---")
+print(exportar_markdown(marketplace))
